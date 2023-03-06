@@ -2,8 +2,14 @@ import tkinter
 # import filedialog module
 from tkinter import filedialog
 
+import cv2
 from PIL import Image, ImageTk
 from customtkinter import CTkButton, CTkLabel, CTkEntry, CTkCheckBox, CTkCanvas
+
+import image_utils
+from anpr import ANPR
+from colour import get_car_colour
+from image_utils import crop_bbox, draw_bbox
 
 
 class MainWindow:
@@ -11,6 +17,7 @@ class MainWindow:
     WINDOW_HEIGHT = 600
     BACKGROUND_COLOR = "#46607E"
     FONT_NAME = "Courier New"
+    ANPR_MODEL = ANPR("weights/small-300E-600I.pt")
 
     def __init__(self, master):
         self.master = master
@@ -93,22 +100,44 @@ class MainWindow:
         master.title("Car Inference")
 
     def open_explorer(self):
-        self.filepath = filedialog.askopenfilename(initialdir="/Users/charlie/Documents/Repos/inferenceGUI",
-                                                   title="Select a File")
-        if self.filepath == '':
+        filepath = filedialog.askopenfilename(initialdir="/Users/charlie/Documents/Repos/inferenceGUI",
+                                              title="Select a File")
+        if filepath == '':
             print("No file selected")
             return
 
-        file_type = self.filepath.split('.')[-1]
+        self.display_image(filepath)
 
+    def display_image(self, path):
+        car_data = {}
+        make_empty = self.make_entry.get() == ''
+        colour_empty = self.colour_entry.get() == ''
+        numberplate_empty = self.numberplate_entry.get() == ''
+
+        file_type = path.split('.')[-1]
         if file_type == 'jpg' or file_type == 'png':
-            # Load an image in the script
-            img = Image.open(self.filepath)
+            # Load an image using cv2 which is what the model wants
+            img = cv2.imread(path)
+            # Perform Object Detection
+            plates, cars = self.ANPR_MODEL.get_image_detections(img)
+            for car in cars:
+                data = {}
+                car_img = crop_bbox(img, car)
+                if not colour_empty:
+                    car_pil = cv2.cvtColor(car_img, cv2.COLOR_BGR2RGB)
+                    car_pil = Image.fromarray(car_pil)
+                    data['colour'] = get_car_colour(image_utils.center_of_image(car_pil))
+
+                img = draw_bbox(img,car, "Car - " + data['colour'], (0, 255, 0))
+            # Convert the image to PIL format which is what tkinter wants
+            detected_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            detected_img = Image.fromarray(detected_img)
             # Resize the Image using resize method
-            resized_image = img.resize((650, 400), Image.LANCZOS)
+            resized_image = detected_img.resize((650, 400), Image.LANCZOS)
             new_image = ImageTk.PhotoImage(resized_image)
-            self.image_label.configure(image=new_image)
-            self.image_label.image = new_image
+            self.frame.create_image(5, 5, image=new_image, anchor=tkinter.NW)
+            self.frame.image = new_image
+            self.frame.place(relx=0.25, rely=0.15)
 
 
 root = tkinter.Tk()
