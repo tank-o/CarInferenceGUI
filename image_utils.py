@@ -4,6 +4,7 @@ from PIL import Image
 
 
 def cv_2_pil(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     im_pil = Image.fromarray(image)
     return im_pil
 
@@ -11,6 +12,7 @@ def cv_2_pil(image):
 def pil_2_cv(image):
     image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     return image
+
 
 # https://stackoverflow.com/questions/56108183/python-opencv-cv2-drawing-rectangle-with-text
 def draw_bbox(image, detection, label=None, colour=(0, 255, 0)):

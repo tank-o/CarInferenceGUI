@@ -11,7 +11,7 @@ class ANPR:
         ssl._create_default_https_context = ssl._create_unverified_context
         self.debug = debug
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
-        self.model.conf = 0.375
+        self.model.conf = 0.5
         #pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
         cuda = torch.cuda.is_available()
         if cuda:
