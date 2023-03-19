@@ -49,3 +49,25 @@ def crop_bbox(image, detection):
     xmin, ymin, xmax, ymax = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(
         detection['ymax'])
     return image[ymin:ymax, xmin:xmax]
+
+def process_plate(plate):
+    # use tesseract to read the plate
+    plate = cv2.resize(plate, (0, 0), fx=3, fy=3)
+    gray = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    #  straighen the plate
+
+    # make sure that the number plate is white on a black background
+    thresh = cv2.bitwise_not(thresh)
+    # get the contours
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # sort the contours by area
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    # get the largest contour
+    largest_contour = contours[0]
+    # get the bounding box of the largest contour
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    # crop the image to the bounding box
+    cropped = thresh[y:y + h, x:x + w]
+    cropped.show()
+    return cropped

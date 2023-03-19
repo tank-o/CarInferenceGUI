@@ -163,7 +163,10 @@ class MainWindow:
         numberplate_empty = self.numberplate_entry.get() == ''
 
         # Perform Object Detection
-        plates, cars = self.ANPR_MODEL.get_image_detections(img)
+        data = self.ANPR_MODEL.get_image_detections(img)
+        cars = data["cars"]
+        plates = data["plates"]
+        time = data["time"]
         for car in cars:
             data = {}
             car_label = "Car"
@@ -182,7 +185,7 @@ class MainWindow:
             plate_label = "Plate"
             plate_img = crop_bbox(img, plate)
             if not numberplate_empty:
-                plate_text = "NOT IMPLEMENTED"
+                plate_text = self.ANPR_MODEL.read_plate(plate_img)
                 plate_label += " " + plate_text
             img = draw_bbox(img, plate, plate_label, (0, 0, 255))
 
