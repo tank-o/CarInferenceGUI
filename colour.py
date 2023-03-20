@@ -50,7 +50,7 @@ def hex_to_lab(hex_string: str):
     return lab_triplet
 
 
-def get_colour_name_rgb(hex_string: str):
+def narrow_down_rgb(hex_string: str):
     rgb_triplet = hex_to_rgb(hex_string)
     min_colours = {}
     for name, key in colour_dict.items():

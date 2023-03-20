@@ -44,7 +44,7 @@ class ANPR:
         data['plates'] = plates
         data['cars'] = cars
         stop = time.time()
-        data['infer_time'] = (stop - start) * 1000
+        data['time'] = (stop - start) * 1000
         return data
 
     def infer_image(self, image):

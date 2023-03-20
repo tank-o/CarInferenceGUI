@@ -9,7 +9,7 @@ from customtkinter import CTkButton, CTkLabel, CTkEntry, CTkCheckBox, CTkCanvas
 import image_utils
 from anpr import ANPR
 from colour import get_car_colour
-from image_utils import crop_bbox, draw_bbox
+from image_utils import crop_bbox
 from make import MakeModel
 
 
@@ -24,9 +24,8 @@ class MainWindow:
     video_capture = None
     play = True
     show_webcam = False
-    show_bboxes = True
-    show_stats = False
-    show_confidence = False
+    show_stats_opt = False
+    show_confidence_opt = False
 
     def __init__(self, master):
         self.master = master
@@ -75,22 +74,17 @@ class MainWindow:
         self.options_frame.pack()
         self.options_frame.place(relx=0.01, rely=0.54)
 
-        # Checkboxes for options
-        self.draw_bbox = CTkCheckBox(master=self.options_frame, text="Draw Bounding Box",
-                                     command=self.bbox_checkbox_changed)
-        self.draw_bbox.place(relx=0.4, rely=0.1, anchor=tkinter.CENTER)
-
         self.show_confidence = CTkCheckBox(master=self.options_frame, text="Show Confidence",
                                            command=self.confidence_checkbox_changed)
-        self.show_confidence.place(relx=0.375, rely=0.35, anchor=tkinter.CENTER)
+        self.show_confidence.place(relx=0.375, rely=0.18, anchor=tkinter.CENTER)
 
         self.show_stats = CTkCheckBox(master=self.options_frame, text="Show Stats",
                                       command=self.stats_checkbox_changed)
-        self.show_stats.place(relx=0.3, rely=0.6, anchor=tkinter.CENTER)
+        self.show_stats.place(relx=0.3, rely=0.47, anchor=tkinter.CENTER)
 
         self.use_webcam = CTkCheckBox(master=self.options_frame, text="Use Webcam",
                                       command=self.webcam_checkbox_changed)
-        self.use_webcam.place(relx=0.312, rely=0.85, anchor=tkinter.CENTER)
+        self.use_webcam.place(relx=0.312, rely=0.76, anchor=tkinter.CENTER)
 
         # Create a canvas
         self.frame = CTkCanvas(master=master,
@@ -141,8 +135,8 @@ class MainWindow:
         file_type = filepath.split('.')[-1]
         if file_type == 'jpg' or file_type == 'png':
             img = cv2.imread(filepath)
-            self.display_image(img, draw_bbox=self.show_bboxes, show_confidence=self.show_confidence,
-                               show_stats=self.show_stats)
+            self.display_image(img, draw_bbox=self.show_bboxes_opt, show_confidence=self.show_confidence_opt,
+                               show_stats=self.show_stats_opt)
         elif file_type == 'mp4':
             self.video_capture = cv2.VideoCapture(filepath)
             self.stream_video()
@@ -157,7 +151,7 @@ class MainWindow:
         if self.play:
             self.frame.after(10, self.stream_video)
 
-    def display_image(self, img):
+    def display_image(self, img, show_confidence=False, show_stats=False):
         make_empty = self.make_entry.get() == ''
         colour_empty = self.colour_entry.get() == ''
         numberplate_empty = self.numberplate_entry.get() == ''
@@ -179,7 +173,7 @@ class MainWindow:
             if not make_empty:
                 data["make"] = self.fetch_make(car_img)
                 car_label += " " + data["make"]
-            img = draw_bbox(img, car, car_label, (0, 255, 0))
+            img = image_utils.draw_bbox(img, car, car_label, (0, 255, 0))
 
         for plate in plates:
             plate_label = "Plate"
@@ -187,7 +181,7 @@ class MainWindow:
             if not numberplate_empty:
                 plate_text = self.ANPR_MODEL.read_plate(plate_img)
                 plate_label += " " + plate_text
-            img = draw_bbox(img, plate, plate_label, (0, 0, 255))
+            img = image_utils.draw_bbox(img, plate, plate_label, (0, 0, 255))
 
         # Convert the image to PIL format which is what tkinter wants
         detected_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -216,10 +210,10 @@ class MainWindow:
         return pred
 
     def bbox_checkbox_changed(self):
-        self.show_bboxes = not self.show_bboxes
+        self.show_bboxes_opt = not self.show_bboxes_opt
 
     def confidence_checkbox_changed(self):
-        self.show_confidence = not self.show_confidence
+        self.show_confidence_opt = not self.show_confidence_opt
 
     def stats_checkbox_changed(self):
         self.show_stats = not self.show_stats

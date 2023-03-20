@@ -69,5 +69,4 @@ def process_plate(plate):
     x, y, w, h = cv2.boundingRect(largest_contour)
     # crop the image to the bounding box
     cropped = thresh[y:y + h, x:x + w]
-    cropped.show()
     return cropped
