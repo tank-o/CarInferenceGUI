@@ -135,7 +135,7 @@ class MainWindow:
         file_type = filepath.split('.')[-1]
         if file_type == 'jpg' or file_type == 'png':
             img = cv2.imread(filepath)
-            self.display_image(img, draw_bbox=self.show_bboxes_opt, show_confidence=self.show_confidence_opt,
+            self.display_image(img, show_confidence=self.show_confidence_opt,
                                show_stats=self.show_stats_opt)
         elif file_type == 'mp4':
             self.video_capture = cv2.VideoCapture(filepath)
@@ -157,15 +157,16 @@ class MainWindow:
         numberplate_empty = self.numberplate_entry.get() == ''
 
         # Perform Object Detection
-        data = self.ANPR_MODEL.get_image_detections(img)
-        cars = data["cars"]
-        plates = data["plates"]
+        data = self.ANPR_MODEL.get_main_detections(img)
+        car = data["car"]
+        plate = data["plate"]
         time = data["time"]
-        for car in cars:
-            data = {}
+
+        data = {}
+
+        if car is not None:
             car_label = "Car"
             car_img = crop_bbox(img, car)
-
             if not colour_empty:
                 car_pil = image_utils.cv_2_pil(car_img)
                 data["colour"] = self.fetch_colour(car_pil)
@@ -175,7 +176,7 @@ class MainWindow:
                 car_label += " " + data["make"]
             img = image_utils.draw_bbox(img, car, car_label, (0, 255, 0))
 
-        for plate in plates:
+        if plate is not None:
             plate_label = "Plate"
             plate_img = crop_bbox(img, plate)
             if not numberplate_empty:
@@ -234,13 +235,19 @@ class MainWindow:
         file_type = filepath.split('.')[-1]
         if file_type == 'jpg' or file_type == 'png':
             img = cv2.imread(filepath)
-            make = self.MAKE_MODEL.infer_image(img)
-            car_pil = image_utils.cv_2_pil(img)
+            data = self.ANPR_MODEL.get_main_detections(img)
+            car_img = crop_bbox(img, data["car"])
+            plate_img = crop_bbox(img, data["plate"])
+            make = self.MAKE_MODEL.infer_image(car_img)
+            plate = self.ANPR_MODEL.read_plate(plate_img)
+            car_pil = image_utils.cv_2_pil(car_img)
             colour = get_car_colour(car_pil)
             self.make_entry.insert(0, make)
             self.make_entry.configure(state="disabled", border_color="yellow")
             self.colour_entry.insert(0, colour)
             self.colour_entry.configure(state="disabled", border_color="yellow")
+            self.numberplate_entry.insert(0, plate)
+            self.numberplate_entry.configure(state="disabled", border_color="yellow")
 
 
 root = tkinter.Tk()

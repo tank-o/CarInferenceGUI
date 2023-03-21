@@ -4,7 +4,8 @@ import time
 import torch
 from pytesseract import pytesseract
 
-from image_utils import draw_bbox, process_plate
+import image_utils
+from image_utils import draw_bbox, process_plate, area_of_bbox
 
 
 class ANPR:
@@ -43,6 +44,41 @@ class ANPR:
                 cars.append(detection)
         data['plates'] = plates
         data['cars'] = cars
+        stop = time.time()
+        data['time'] = (stop - start) * 1000
+        return data
+
+    def get_main_detections(self, image):
+        data = {}
+        start = time.time()
+        results = self.model(image, size=416)
+        results = results.pandas().xyxy[0]
+        self.log(results)
+        # Get the largest vehicle detection and the largest plate detection
+        car = None
+        plate = None
+        for detection in results.iterrows():
+            detection = detection[1]
+            # Get the largest car detection
+            if detection['name'] == 'car':
+                if car is None:
+                    car = detection
+                else:
+                    if area_of_bbox(detection) > area_of_bbox(car):
+                        car = detection
+
+        for detection in results.iterrows():
+            detection = detection[1]
+            # Get the largest plate detection
+            if detection['name'] == 'number-plate':
+                if plate is None:
+                    plate = detection
+                else:
+                    if area_of_bbox(detection) > area_of_bbox(plate):
+                        plate = detection
+
+        data['plate'] = plate
+        data['car'] = car
         stop = time.time()
         data['time'] = (stop - start) * 1000
         return data

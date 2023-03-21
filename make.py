@@ -7,7 +7,8 @@ class MakeModel:
     classes = ["Audi", "BMW", "Ford", "Mercedes", "Nissan", "Toyota", "Vauxhall", "Volkswagen"]
 
     def __init__(self, model_path, debug=False):
-        self.model = tf.keras.models.load_model(model_path)
+        self.model = tf.keras.models.load_model(model_path, compile=False)
+        print(tf.config.list_physical_devices())
         self.debug = debug
 
     def infer_image(self, img):

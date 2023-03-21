@@ -50,6 +50,21 @@ def crop_bbox(image, detection):
         detection['ymax'])
     return image[ymin:ymax, xmin:xmax]
 
+
+def area_of_bbox(detection):
+    """Returns the area of a bounding box."""
+    xmin, ymin, xmax, ymax = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(
+        detection['ymax'])
+    return (xmax - xmin) * (ymax - ymin)
+
+
+def is_inside(bbox1, bbox2):
+    """Checks if bbox1 is inside bbox2."""
+    xmin1, ymin1, xmax1, ymax1 = int(bbox1['xmin']), int(bbox1['ymin']), int(bbox1['xmax']), int(bbox1['ymax'])
+    xmin2, ymin2, xmax2, ymax2 = int(bbox2['xmin']), int(bbox2['ymin']), int(bbox2['xmax']), int(bbox2['ymax'])
+    return xmin1 > xmin2 and xmax1 < xmax2 and ymin1 > ymin2 and ymax1 < ymax2
+
+
 def process_plate(plate):
     # use tesseract to read the plate
     plate = cv2.resize(plate, (0, 0), fx=3, fy=3)
