@@ -1,10 +1,10 @@
 import ssl
 import time
 
+import easyocr
 import torch
 from pytesseract import pytesseract
 
-import image_utils
 from image_utils import draw_bbox, process_plate, area_of_bbox
 
 
@@ -22,7 +22,11 @@ class ANPR:
         self.device = torch.device("cuda:0" if cuda else "cpu")
         self.model.to(self.device)
         print(torch.cuda.get_device_name(0))
+        self.warmup()
         self.log("Model loaded")
+
+    def warmup(self):
+        self.model(torch.zeros((1, 3, 416, 416)).to(self.device).type(torch.cuda.FloatTensor))
 
     def log(self, message):
         if self.debug:
@@ -33,7 +37,6 @@ class ANPR:
         start = time.time()
         results = self.model(image, size=416)
         results = results.pandas().xyxy[0]
-        self.log(results)
         plates = []
         cars = []
         for detection in results.iterrows():
@@ -53,7 +56,6 @@ class ANPR:
         start = time.time()
         results = self.model(image, size=416)
         results = results.pandas().xyxy[0]
-        self.log(results)
         # Get the largest vehicle detection and the largest plate detection
         car = None
         plate = None
@@ -79,8 +81,6 @@ class ANPR:
 
         data['plate'] = plate
         data['car'] = car
-        stop = time.time()
-        data['time'] = (stop - start) * 1000
         return data
 
     def infer_image(self, image):
@@ -97,4 +97,16 @@ class ANPR:
         # Read the plate - only allow caps and numbers
         plate_text = pytesseract.image_to_string(plate,
                                                  config='--psm 10 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+        # Remove spaces
+        plate_text = plate_text.replace(" ", "")
+        # Remove new lines
+        plate_text = plate_text.replace("\n", "")
+        # Remove question marks
+        plate_text = plate_text.replace("?", "")
         return plate_text
+
+    def read_plate_easyocr(self, plate):
+        reader = easyocr.Reader(['en'])
+        plate = process_plate(plate)
+        result = reader.readtext(plate, detail=0)[0]
+        return result

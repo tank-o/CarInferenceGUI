@@ -28,13 +28,13 @@ def draw_bbox(image, detection, label=None, colour=(0, 255, 0)):
     cv2.rectangle(image, (xmin, ymin), (xmax, ymax), colour, 2)
     # draw text
     cv2.rectangle(image, (xmin, ymin - h - 5), (xmin + w, ymin), colour, -1)
-    cv2.putText(image, label, (xmin, ymin - 5), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+    cv2.putText(image, label, (xmin, ymin - 5), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 0, 0), 1)
     # draw fancy text box
     return image
 
 
 def center_of_image(image):
-    """Crops the center 100px of a bounding box from an image."""
+    """Crops the center 25% of a bounding box from an image."""
     x_length = image.width
     y_length = image.height
     yoffset = y_length * 0.25
@@ -69,11 +69,7 @@ def process_plate(plate):
     # use tesseract to read the plate
     plate = cv2.resize(plate, (0, 0), fx=3, fy=3)
     gray = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    #  straighen the plate
-
-    # make sure that the number plate is white on a black background
-    thresh = cv2.bitwise_not(thresh)
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
     # get the contours
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     # sort the contours by area
