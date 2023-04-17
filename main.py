@@ -181,12 +181,8 @@ class MainWindow:
         if self.play:
             self.frame.after(10, self.stream_video)
 
-    def display_image(self, img, show_confidence=False, show_stats=False):
-        make_empty = self.make_entry.get() == ''
-        colour_empty = self.colour_entry.get() == ''
-        numberplate_empty = self.numberplate_entry.get() == ''
+    def display_image(self, img):
         start = time.time()
-
         # Perform Object Detection
         data = self.ANPR_MODEL.get_main_detections(img)
         car = data["car"]
@@ -205,21 +201,23 @@ class MainWindow:
             data["make"] = self.MAKE_MODEL.infer_image(car_img)
             car_label += " " + data["make"]
 
-
         if plate is not None:
             plate_label = "Plate"
             plate_img = crop_bbox(img, plate)
             extracted = self.ANPR_MODEL.read_plate(plate_img)
-            if extracted not in [None,'']:
+            if extracted not in [None, '']:
                 data["numberplate"] = extracted
                 plate_label += " " + data["numberplate"]
 
         # if any of the boxes are filled in, check it against the database
-        if self.DB.check_car_matches(data) not in [None, []]:
-            car_label = "MATCH"
+        if car is not None or plate is not None:
+            if self.DB.check_car_matches(data) not in [None, []]:
+                car_label += " - MATCH"
 
         if car is not None:
             img = image_utils.draw_bbox(img, car, car_label, (0, 255, 0))
+            if self.show_stats_opt:
+                self.log(car_label)
         if plate is not None:
             img = image_utils.draw_bbox(img, plate, plate_label, (0, 0, 255))
         stop = time.time()
@@ -242,13 +240,16 @@ class MainWindow:
         self.show_confidence_opt = not self.show_confidence_opt
 
     def stats_checkbox_changed(self):
-        self.show_stats = not self.show_stats
+        self.show_stats_opt = not self.show_stats_opt
 
     def webcam_checkbox_changed(self):
         self.show_webcam = not self.show_webcam
         if self.show_webcam:
             self.video_capture = cv2.VideoCapture(0)
             self.stream_video()
+        else:
+            self.frame.delete("all")
+            self.video_capture.release()
 
     def open_stolen(self):
         filepath = filedialog.askopenfilename(initialdir="/Users/charlie/Documents/Repos/inferenceGUI",
@@ -298,6 +299,7 @@ class MainWindow:
         self.numberplate_entry.configure(textvariable='', state="normal")
         self.colour_entry.configure(textvariable='', state="normal")
         self.make_entry.configure(textvariable='', state="normal")
+
 
 root = tkinter.Tk()
 my_gui = MainWindow(root)

@@ -1,3 +1,4 @@
 numberplate=DEF456,make=Toyota,colour=Green
 numberplate=MNO345,make=Honda,colour=Red
 make=Ford,colour=Silver
+make=Ford,colour=Yellow,numberplate=T3STPL4TE

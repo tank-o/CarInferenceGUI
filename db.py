@@ -18,7 +18,7 @@ class VehicleStore:
         with open('data.csv', 'a') as f:
             f.write('\n')
             for key, value in data.items():
-                f.write(f'{key}={value}' + (',' if key == list(data.keys())[-1] else ''))
+                f.write(f'{key}={value}' + ('' if key == list(data.keys())[-1] else ','))
 
     def check_car_matches(self, data):
         # check if the car matches any in the database, if all the keys in the data match exluding reasoning
