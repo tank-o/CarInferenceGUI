@@ -3,7 +3,7 @@ import tkinter
 # import filedialog module
 from tkinter import filedialog
 from tkinter import scrolledtext
-from tkinter.messagebox import showerror
+from tkinter.messagebox import showerror, showinfo
 
 import cv2
 from PIL import Image, ImageTk
@@ -164,8 +164,7 @@ class MainWindow:
         file_type = filepath.split('.')[-1]
         if file_type == 'jpg' or file_type == 'png':
             img = cv2.imread(filepath)
-            self.display_image(img, show_confidence=self.show_confidence_opt,
-                               show_stats=self.show_stats_opt)
+            self.display_image(img)
         elif file_type == 'mp4':
             self.video_capture = cv2.VideoCapture(filepath)
             self.play_button.place(relx=0.6, rely=0.9, anchor=tkinter.CENTER)
@@ -187,7 +186,8 @@ class MainWindow:
         data = self.ANPR_MODEL.get_main_detections(img)
         car = data["car"]
         plate = data["plate"]
-
+        car_label = "Car"
+        plate_label = "Plate"
         data = {}
 
         if car is not None:
@@ -208,7 +208,6 @@ class MainWindow:
             if extracted not in [None, '']:
                 data["numberplate"] = extracted
                 plate_label += " " + data["numberplate"]
-
         # if any of the boxes are filled in, check it against the database
         if car is not None or plate is not None:
             if self.DB.check_car_matches(data) not in [None, []]:
@@ -264,16 +263,19 @@ class MainWindow:
             data = self.ANPR_MODEL.get_main_detections(img)
             car_img = crop_bbox(img, data["car"])
             plate_img = crop_bbox(img, data["plate"])
+            data = {}
             make = self.MAKE_MODEL.infer_image(car_img)
+            if make != '':
+                data["make"] = make
             plate = self.ANPR_MODEL.read_plate(plate_img)
+            if plate != '':
+                data["numberplate"] = plate
             car_pil = image_utils.cv_2_pil(car_img)
-            colour = get_car_colour(car_pil)
-            self.make_entry.insert(0, make)
-            self.make_entry.configure(state="disabled", border_color="yellow")
-            self.colour_entry.insert(0, colour)
-            self.colour_entry.configure(state="disabled", border_color="yellow")
-            self.numberplate_entry.insert(0, plate)
-            self.numberplate_entry.configure(state="disabled", border_color="yellow")
+            colour = get_car_colour(image_utils.center_of_image(car_pil))
+            if colour != '':
+                data["colour"] = colour
+            self.DB.add_vehicle(data)
+            showinfo("Success", "Vehicle added to database")
 
     def create_logo(self):
         logo = Image.open("logo.png")
@@ -299,6 +301,7 @@ class MainWindow:
         self.numberplate_entry.configure(textvariable='', state="normal")
         self.colour_entry.configure(textvariable='', state="normal")
         self.make_entry.configure(textvariable='', state="normal")
+        showinfo("Success", "Vehicle added to database")
 
 
 root = tkinter.Tk()
